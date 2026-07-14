@@ -478,6 +478,25 @@
     .form-select { appearance:none; -webkit-appearance:none; }
     .form-select option { background:var(--surface); color:var(--text); }
     .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .form-row-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+    .flyer-zone { border:2px dashed var(--border); border-radius:var(--radius); padding:22px 16px; text-align:center; cursor:pointer; transition:border-color 0.2s,background 0.2s; background:var(--surface); }
+    .flyer-zone:hover,.flyer-zone.has-img { border-color:var(--primary); }
+    .flyer-zone input[type=file] { display:none; }
+    .flyer-zone-icon { font-size:26px; margin-bottom:5px; }
+    .flyer-zone-text { font-size:12px; color:var(--text-3); }
+    .flyer-zone-sub { font-size:11px; color:var(--text-3); margin-top:3px; }
+    .flyer-preview-img { width:100%; border-radius:var(--radius-sm); max-height:180px; object-fit:cover; margin-top:10px; display:none; }
+    .toggle-row { display:flex; align-items:center; justify-content:space-between; background:var(--surface); border:1.5px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; }
+    .toggle-info .toggle-label { font-size:14px; font-weight:600; }
+    .toggle-info .toggle-sub { font-size:11px; color:var(--text-3); margin-top:2px; }
+    .tog { position:relative; width:44px; height:26px; flex-shrink:0; }
+    .tog input { opacity:0; width:0; height:0; position:absolute; }
+    .tog-sl { position:absolute; inset:0; background:var(--border); border-radius:13px; transition:0.3s; cursor:pointer; }
+    .tog-sl:before { content:''; position:absolute; width:20px; height:20px; left:3px; top:3px; background:#fff; border-radius:50%; transition:0.3s; }
+    .tog input:checked + .tog-sl { background:var(--primary); }
+    .tog input:checked + .tog-sl:before { transform:translateX(18px); }
+    .form-hint { font-size:11px; color:var(--text-3); margin-top:5px; }
+    .form-section-hdr { font-size:12px; font-weight:800; color:var(--text-3); letter-spacing:.08em; text-transform:uppercase; padding:8px 0 4px; border-top:1px solid var(--border); margin-bottom:4px; }
 
     /* ── Tier badges ── */
     .tier-badge { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:800;
@@ -1181,6 +1200,16 @@
         <input class="form-input" id="formName" placeholder="What's the move called?" maxlength="60">
       </div>
       <div class="form-group">
+        <label class="form-label">Event Flyer / Photo</label>
+        <div class="flyer-zone" id="flyerZone" onclick="document.getElementById('formFlyer').click()">
+          <input type="file" id="formFlyer" accept="image/*" onchange="previewFlyer(this)">
+          <div class="flyer-zone-icon">📸</div>
+          <div class="flyer-zone-text">Tap to upload your flyer or photo</div>
+          <div class="flyer-zone-sub">JPG, PNG, GIF · max 5 MB</div>
+          <img class="flyer-preview-img" id="flyerPreview" alt="Flyer preview">
+        </div>
+      </div>
+      <div class="form-group">
         <label class="form-label">Category *</label>
         <select class="form-select" id="formType">
           <option value="nightlife">🌙 Nightlife</option>
@@ -1196,7 +1225,17 @@
         <label class="form-label">Venue *</label>
         <input class="form-input" id="formVenue" placeholder="Venue name or address">
       </div>
-      <div class="form-row">
+      <div class="form-row" style="margin-bottom:16px">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Neighborhood</label>
+          <input class="form-input" id="formNeighborhood" placeholder="e.g. Crown Heights">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Zip Code</label>
+          <input class="form-input" id="formZip" placeholder="e.g. 11238" maxlength="5" inputmode="numeric">
+        </div>
+      </div>
+      <div class="form-row-3">
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Date</label>
           <input class="form-input" id="formDate" type="date">
@@ -1204,6 +1243,10 @@
         <div class="form-group" style="margin-bottom:0">
           <label class="form-label">Start Time</label>
           <input class="form-input" id="formTime" type="time">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">End Time</label>
+          <input class="form-input" id="formEndTime" type="time">
         </div>
       </div>
       <div style="height:16px"></div>
@@ -1218,6 +1261,31 @@
       <div class="form-group">
         <label class="form-label">Description *</label>
         <textarea class="form-textarea" id="formDesc" placeholder="Tell them what the vibe is…"></textarea>
+      </div>
+      <div class="form-row" style="margin-bottom:16px">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Age Restriction</label>
+          <select class="form-select" id="formAge">
+            <option value="">All Ages</option>
+            <option value="18+">18+ Only</option>
+            <option value="21+">21+ Only</option>
+            <option value="25+">25+ Only</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Dress Code</label>
+          <select class="form-select" id="formDress">
+            <option value="">No Restrictions</option>
+            <option value="Upscale">Upscale / Business Casual</option>
+            <option value="Casual">Casual</option>
+            <option value="Sneakers OK">Sneakers OK</option>
+            <option value="Costume / Theme">Costume / Theme</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Capacity (Max Attendees)</label>
+        <input class="form-input" id="formCapacity" type="number" min="1" placeholder="Leave blank for unlimited" inputmode="numeric">
       </div>
       <div style="height:4px"></div>
       <div style="padding:0;margin-bottom:14px">
@@ -1236,6 +1304,43 @@
           <option value="thu_fri_sat">Thursday, Friday & Saturday</option>
           <option value="fri">Every Friday</option>
         </select>
+      </div>
+      <div style="height:12px"></div>
+      <div class="form-section-hdr">Guest List & Promotions</div>
+      <div class="form-group">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">🎟️ Enable Guest List</div>
+            <div class="toggle-sub">Attendees can RSVP to your guest list</div>
+          </div>
+          <label class="tog"><input type="checkbox" id="formGuestList"><span class="tog-sl"></span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="toggle-row">
+          <div class="toggle-info">
+            <div class="toggle-label">🔒 Table Reservations</div>
+            <div class="toggle-sub">Enable VIP table booking for your event</div>
+          </div>
+          <label class="tog"><input type="checkbox" id="formTables"><span class="tog-sl"></span></label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Promo Code (optional)</label>
+        <input class="form-input" id="formPromoCode" placeholder="e.g. WELITT25 for 25% off" style="text-transform:uppercase" oninput="this.value=this.value.toUpperCase()">
+        <div class="form-hint">Attendees enter this code at checkout for a discount</div>
+      </div>
+      <div style="height:4px"></div>
+      <div class="form-section-hdr">Connect & Promote</div>
+      <div class="form-row" style="margin-bottom:16px">
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">Instagram Handle</label>
+          <input class="form-input" id="formInstagram" placeholder="@yourhandle">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label class="form-label">RSVP Contact</label>
+          <input class="form-input" id="formContact" placeholder="Phone or email">
+        </div>
       </div>
       <div style="height:8px"></div>
     </div>
@@ -4664,13 +4769,27 @@ function renderPromoterContent() {
   } else {
     html += `<div style="padding:0 20px 8px">` + myEvents.map(e => {
       const tierLabel = e.tier === 'black' ? '<span style="font-size:10px;color:var(--gold);font-weight:800">🖤 Black</span>' : e.tier === 'plus' ? '<span style="font-size:10px;color:var(--purple-light);font-weight:800">⚡ Litt+</span>' : '';
-      return `<div class="promo-event-item" onclick="openEvent(${e.id})">
-        <div class="promo-event-img" style="background:${e.gradient}">${e.emoji}</div>
-        <div style="flex:1">
-          <div style="display:flex;align-items:center;gap:6px"><div class="promo-event-name">${e.name}</div>${tierLabel}</div>
-          <div class="promo-event-meta">📍 ${e.venue} · ${e.date}</div>
-          <div class="promo-event-stats">👥 ${e.going} RSVPs · ${e.price}${e.recurringLabel?` · 🔄 ${e.recurringLabel}`:''}</div>
-          ${e.revenue > 0 ? `<div style="font-size:11px;color:var(--gold);font-weight:700;margin-top:2px">💰 $${(e.revenue*0.91).toFixed(2)} earned</div>` : ''}
+      const badges = [
+        e.age ? `<span style="font-size:10px;background:rgba(255,61,110,.15);color:var(--primary);padding:2px 6px;border-radius:20px;font-weight:700">${e.age}</span>` : '',
+        e.dress ? `<span style="font-size:10px;background:var(--surface);color:var(--text-2);padding:2px 6px;border-radius:20px;font-weight:600">👔 ${e.dress}</span>` : '',
+        e.guestList ? `<span style="font-size:10px;background:rgba(124,58,237,.15);color:#a78bfa;padding:2px 6px;border-radius:20px;font-weight:600">🎟️ Guest List</span>` : '',
+        e.tables ? `<span style="font-size:10px;background:rgba(201,168,76,.12);color:var(--gold);padding:2px 6px;border-radius:20px;font-weight:600">🍾 Tables</span>` : '',
+      ].filter(Boolean).join(' ');
+      const flyerEl = e.flyerUrl ? `<img src="${e.flyerUrl}" style="width:100%;border-radius:10px;max-height:140px;object-fit:cover;margin-bottom:10px;display:block">` : '';
+      return `<div class="promo-event-item" style="flex-direction:column;align-items:stretch" onclick="openEvent(${e.id})">
+        ${flyerEl}
+        <div style="display:flex;gap:12px">
+          ${!e.flyerUrl ? `<div class="promo-event-img" style="background:${e.gradient}">${e.emoji}</div>` : ''}
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap"><div class="promo-event-name">${e.name}</div>${tierLabel}</div>
+            <div class="promo-event-meta">📍 ${e.venue} · ${e.date}</div>
+            <div class="promo-event-meta">${e.time}${e.neighborhood !== currentCity.name+', '+currentCity.state ? ' · '+e.neighborhood : ''}</div>
+            ${badges ? `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px">${badges}</div>` : ''}
+            <div class="promo-event-stats" style="margin-top:5px">👥 ${e.going} RSVPs · ${e.price}${e.capacity ? ` · ${e.capacity} cap` : ''}${e.recurringLabel?` · 🔄 ${e.recurringLabel}`:''}</div>
+            ${e.promoCode ? `<div style="font-size:11px;color:var(--text-2);margin-top:3px">🏷️ Promo: <strong>${e.promoCode}</strong></div>` : ''}
+            ${e.instagram ? `<div style="font-size:11px;color:var(--text-2);margin-top:2px">📸 @${e.instagram}</div>` : ''}
+            ${e.revenue > 0 ? `<div style="font-size:11px;color:var(--gold);font-weight:700;margin-top:3px">💰 $${(e.revenue*0.91).toFixed(2)} earned</div>` : ''}
+          </div>
         </div>
       </div>`;
     }).join('') + `</div>
@@ -4720,6 +4839,21 @@ function getTicketTiers() {
   });
   return tiers;
 }
+function previewFlyer(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) { showToast('Flyer must be under 5 MB 📸'); input.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = document.getElementById('flyerPreview');
+    img.src = e.target.result;
+    img.style.display = 'block';
+    document.getElementById('flyerZone').classList.add('has-img');
+    document.querySelector('#flyerZone .flyer-zone-icon').textContent = '✅';
+    document.querySelector('#flyerZone .flyer-zone-text').textContent = file.name;
+  };
+  reader.readAsDataURL(file);
+}
 function submitPromoterEvent() {
   if (promoterStatus !== 'approved') {
     showToast('⏳ Awaiting promoter approval');
@@ -4728,11 +4862,25 @@ function submitPromoterEvent() {
   const name = document.getElementById('formName').value.trim();
   const type = document.getElementById('formType').value;
   const venue = document.getElementById('formVenue').value.trim();
+  const neighborhood = document.getElementById('formNeighborhood').value.trim();
+  const zip = document.getElementById('formZip').value.trim();
   const dateVal = document.getElementById('formDate').value;
   const timeVal = document.getElementById('formTime').value;
+  const endTimeVal = document.getElementById('formEndTime').value;
   const desc = document.getElementById('formDesc').value.trim();
   const visibility = document.getElementById('formVisibility')?.value || 'free';
   const recurring = document.getElementById('formRecurring')?.value || '';
+  const age = document.getElementById('formAge').value;
+  const dress = document.getElementById('formDress').value;
+  const capacityVal = document.getElementById('formCapacity').value;
+  const capacity = capacityVal ? parseInt(capacityVal) : null;
+  const guestList = document.getElementById('formGuestList').checked;
+  const tables = document.getElementById('formTables').checked;
+  const promoCode = document.getElementById('formPromoCode').value.trim().toUpperCase();
+  const instagram = document.getElementById('formInstagram').value.trim().replace(/^@/,'');
+  const contact = document.getElementById('formContact').value.trim();
+  const flyerImg = document.getElementById('flyerPreview');
+  const flyerUrl = flyerImg.style.display !== 'none' ? flyerImg.src : null;
   if (!name || !venue || !desc) { showToast('Fill in the required fields ✍️'); return; }
   const tiers = getTicketTiers();
   const priceDisplay = tiers.length === 1 && tiers[0].price === 0
@@ -4744,18 +4892,28 @@ function submitPromoterEvent() {
   const dateLabel = dateVal
     ? new Date(dateVal + 'T12:00:00').toLocaleDateString('en-US', {weekday:'short',month:'short',day:'numeric'})
     : 'Coming Soon';
-  const timeLabel = timeVal ? `${fmtTime(timeVal)} – Late` : 'TBD';
+  const timeLabel = timeVal
+    ? endTimeVal ? `${fmtTime(timeVal)} – ${fmtTime(endTimeVal)}` : `${fmtTime(timeVal)} – Late`
+    : 'TBD';
   const todayStr = new Date().toISOString().split('T')[0];
   const recurringLabel = recurring ? { fri_sat:'Every Fri & Sat', sat:'Every Saturday', sun:'Every Sunday', thu_fri_sat:'Thu–Sat', fri:'Every Friday' }[recurring] : null;
   const vibes = ['🎤 Promoter Event', cat.emoji+' '+cat.label, `📍 ${currentCity.name}`];
+  if (age) vibes.push(`🔞 ${age}`);
+  if (dress) vibes.push(`👔 ${dress}`);
   if (recurring) vibes.push(`🔄 ${recurringLabel}`);
   const newEvent = {
     id: Date.now(), city: currentCity.id,
     name, type, typeLabel: cat.label, venue,
-    neighborhood: `${currentCity.name}, ${currentCity.state}`,
+    neighborhood: neighborhood || `${currentCity.name}, ${currentCity.state}`,
+    zip: zip || undefined,
     date: dateLabel, time: timeLabel, price: priceDisplay,
     ticketTiers: tiers, tier: visibility === 'free' ? undefined : visibility,
     recurringLabel, recurring,
+    age: age || null, dress: dress || null, capacity,
+    guestList, tables,
+    promoCode: promoCode || null,
+    instagram: instagram || null, contact: contact || null,
+    flyerUrl,
     littScore: 75, rating: 0, reviews: 0, going: 0, distance: '?',
     lat: currentCity.lat + (Math.random()-0.5)*0.04,
     lng: currentCity.lng + (Math.random()-0.5)*0.04,
@@ -4772,9 +4930,22 @@ function submitPromoterEvent() {
   showToast('🔥 Your event is live on We Litt!');
   document.getElementById('ticketTierBuilder').innerHTML = '';
   ticketTierCount = 0;
-  ['formName','formVenue','formDate','formTime','formDesc'].forEach(id => {
+  ['formName','formVenue','formNeighborhood','formZip','formDate','formTime','formEndTime',
+   'formDesc','formCapacity','formPromoCode','formInstagram','formContact'].forEach(id => {
     const el = document.getElementById(id); if (el) el.value = '';
   });
+  ['formGuestList','formTables'].forEach(id => {
+    const el = document.getElementById(id); if (el) el.checked = false;
+  });
+  const flyerPreviewEl = document.getElementById('flyerPreview');
+  if (flyerPreviewEl) { flyerPreviewEl.src=''; flyerPreviewEl.style.display='none'; }
+  const flyerZoneEl = document.getElementById('flyerZone');
+  if (flyerZoneEl) {
+    flyerZoneEl.classList.remove('has-img');
+    flyerZoneEl.querySelector('.flyer-zone-icon').textContent = '📸';
+    flyerZoneEl.querySelector('.flyer-zone-text').textContent = 'Tap to upload your flyer or photo';
+  }
+  document.getElementById('formFlyer').value = '';
 }
 
 /* ── Auth ── */
@@ -5084,14 +5255,32 @@ function openEvent(id) {
       </div>`
     : '';
   const saved = savedEvents.has(id);
-  document.getElementById('modalHero').style.background = e.gradient;
-  document.getElementById('modalHero').innerHTML = `
-    <button class="modal-close" onclick="closeModal()">✕</button>
-    <span style="font-size:80px;position:relative;z-index:1">${e.emoji}</span>
-    <div class="modal-hero-overlay"></div>`;
+  if (e.flyerUrl) {
+    document.getElementById('modalHero').style.background = 'var(--card)';
+    document.getElementById('modalHero').style.padding = '0';
+    document.getElementById('modalHero').innerHTML = `
+      <button class="modal-close" onclick="closeModal()" style="z-index:2">✕</button>
+      <img src="${e.flyerUrl}" style="width:100%;height:100%;object-fit:cover;display:block;border-radius:0">
+      <div class="modal-hero-overlay"></div>`;
+  } else {
+    document.getElementById('modalHero').style.background = e.gradient;
+    document.getElementById('modalHero').style.padding = '';
+    document.getElementById('modalHero').innerHTML = `
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <span style="font-size:80px;position:relative;z-index:1">${e.emoji}</span>
+      <div class="modal-hero-overlay"></div>`;
+  }
+  const eventBadges = [
+    e.age ? `<span style="font-size:11px;background:rgba(255,61,110,.15);color:var(--primary);padding:3px 8px;border-radius:20px;font-weight:700">${e.age}</span>` : '',
+    e.dress ? `<span style="font-size:11px;background:var(--surface);color:var(--text-2);padding:3px 8px;border-radius:20px;font-weight:600">👔 ${e.dress}</span>` : '',
+    e.guestList ? `<span style="font-size:11px;background:rgba(124,58,237,.15);color:#a78bfa;padding:3px 8px;border-radius:20px;font-weight:600">🎟️ Guest List</span>` : '',
+    e.tables ? `<span style="font-size:11px;background:rgba(201,168,76,.12);color:var(--gold);padding:3px 8px;border-radius:20px;font-weight:600">🍾 Tables</span>` : '',
+    e.capacity ? `<span style="font-size:11px;background:var(--surface);color:var(--text-2);padding:3px 8px;border-radius:20px;font-weight:600">🏟️ ${e.capacity} cap</span>` : '',
+  ].filter(Boolean).join('');
   document.getElementById('modalContent').innerHTML = `
     <div class="modal-type" style="background:${e.gradient};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">${e.typeLabel}</div>
     <div class="modal-name">${e.name}</div>
+    ${eventBadges ? `<div style="display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px">${eventBadges}</div>` : ''}
     <div class="modal-venue">📍 ${e.venue} · ${e.neighborhood}</div>
     <div class="modal-scores">
       <div class="modal-score-card"><div class="sc-val" style="color:var(--gold)">⚡ ${e.littScore}</div><div class="sc-label">Litt Score</div></div>
@@ -5108,6 +5297,12 @@ function openEvent(id) {
       <div class="info-row"><span class="info-icon">⏰</span><div class="info-text">${e.time}</div></div>
       <div class="info-row"><span class="info-icon">💰</span><div class="info-text">${e.price}</div></div>
       <div class="info-row"><span class="info-icon">📍</span><div><div class="info-text">${e.venue}</div><div class="info-sub">${e.neighborhood} · ${e.distance}</div></div></div>
+      ${e.age ? `<div class="info-row"><span class="info-icon">🔞</span><div class="info-text">${e.age} Only</div></div>` : ''}
+      ${e.dress ? `<div class="info-row"><span class="info-icon">👔</span><div class="info-text">Dress Code: ${e.dress}</div></div>` : ''}
+      ${e.capacity ? `<div class="info-row"><span class="info-icon">🏟️</span><div class="info-text">Capacity: ${e.capacity.toLocaleString()} people</div></div>` : ''}
+      ${e.instagram ? `<div class="info-row"><span class="info-icon">📸</span><div class="info-text">@${e.instagram}</div></div>` : ''}
+      ${e.contact ? `<div class="info-row"><span class="info-icon">📞</span><div class="info-text">${e.contact}</div></div>` : ''}
+      ${e.promoCode ? `<div class="info-row"><span class="info-icon">🏷️</span><div><div class="info-text">Promo Code: <strong>${e.promoCode}</strong></div><div class="info-sub">Enter at checkout for a discount</div></div></div>` : ''}
     </div>
     <div class="modal-section">
       <div class="modal-section-title">The Vibe</div>
