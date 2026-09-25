@@ -173,9 +173,15 @@
 
     /* ── Profile ── */
     .profile-header { display: flex; flex-direction: column; align-items: center; padding: 24px 20px 20px; gap: 12px; }
-    .profile-avatar { width: 80px; height: 80px; border-radius: 50%;
+    .profile-avatar { width: 80px; height: 80px; border-radius: 50%; position: relative;
       background: linear-gradient(135deg,#6B21A8,#EC4899); display: flex; align-items: center;
-      justify-content: center; font-size: 36px; border: 3px solid var(--primary); }
+      justify-content: center; font-size: 36px; border: 3px solid var(--primary);
+      cursor: pointer; overflow: hidden; flex-shrink: 0; }
+    .profile-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+    .avatar-edit-overlay { position: absolute; bottom: 0; left: 0; right: 0; background: rgba(0,0,0,0.55);
+      font-size: 10px; font-weight: 700; color: #fff; text-align: center; padding: 5px 0;
+      opacity: 0; transition: opacity 0.2s; letter-spacing: .03em; }
+    .profile-avatar:hover .avatar-edit-overlay, .profile-avatar:active .avatar-edit-overlay { opacity: 1; }
     .profile-name { font-size: 20px; font-weight: 800; }
     .profile-handle { font-size: 14px; color: var(--text-2); }
     .profile-stats { display: flex; background: var(--card); border: 1px solid var(--border);
@@ -191,6 +197,13 @@
     .profile-menu-item:last-child { border-bottom: none; }
     .profile-menu-icon { width: 40px; height: 40px; border-radius: 12px; background: var(--surface);
       display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .promo-card-actions { display: flex; gap: 8px; margin-top: 10px; }
+    .promo-card-btn { flex: 1; padding: 9px; border: 1.5px solid var(--border); border-radius: 10px;
+      background: var(--surface); color: var(--text-2); font-size: 13px; font-weight: 700;
+      cursor: pointer; text-align: center; transition: background 0.15s; }
+    .promo-card-btn:active { background: var(--border); }
+    .promo-card-btn.edit { border-color: var(--primary); color: var(--primary); }
+    .promo-card-btn.delete { border-color: rgba(255,61,110,.35); color: var(--primary); }
     .profile-menu-text { flex: 1; }
     .profile-menu-text .menu-title { font-size: 15px; font-weight: 600; }
     .profile-menu-text .menu-sub { font-size: 12px; color: var(--text-2); margin-top: 1px; }
@@ -957,7 +970,11 @@
     <!-- PROFILE -->
     <div id="view-profile" class="view">
       <div class="profile-header">
-        <div class="profile-avatar">😎</div>
+        <div class="profile-avatar" id="profileAvatarEl" onclick="document.getElementById('avatarFileInput').click()">
+          <span class="profile-avatar-emoji">😎</span>
+          <input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="uploadProfilePhoto(this)">
+          <div class="avatar-edit-overlay">📷 Change</div>
+        </div>
         <div class="profile-name">Night Owl</div>
         <div class="profile-handle">@nightowl · Member since 2024</div>
       </div>
@@ -1191,7 +1208,7 @@
   <div class="modal-sheet" id="eventFormSheet" style="z-index:205;max-height:94dvh">
     <div class="modal-handle"></div>
     <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border);flex-shrink:0">
-      <div style="font-size:18px;font-weight:800">🔥 Drop New Event</div>
+      <div id="eventFormTitle" style="font-size:18px;font-weight:800">🔥 Drop New Event</div>
       <button class="icon-btn" onclick="closeEventForm()">✕</button>
     </div>
     <div class="form-scroll">
@@ -1345,7 +1362,7 @@
       <div style="height:8px"></div>
     </div>
     <div class="modal-actions">
-      <button class="btn-primary" onclick="submitPromoterEvent()">🔥 Drop This Event</button>
+      <button id="eventFormSubmitBtn" class="btn-primary" onclick="submitPromoterEvent()">🔥 Drop This Event</button>
       <button class="btn-secondary" onclick="closeEventForm()">✕</button>
     </div>
   </div>
@@ -4081,6 +4098,7 @@ let selectedOccasion = null;
 let userTier = localStorage.getItem('we-litt-tier') || 'free';
 let promoterStatus = localStorage.getItem('we-litt-promoter') || null;
 let ticketTierCount = 0;
+let editingEventId = null;
 
 /* ── Skeleton helpers ── */
 function skelCardH(n = 3) {
@@ -4791,20 +4809,84 @@ function renderPromoterContent() {
             ${e.revenue > 0 ? `<div style="font-size:11px;color:var(--gold);font-weight:700;margin-top:3px">💰 $${(e.revenue*0.91).toFixed(2)} earned</div>` : ''}
           </div>
         </div>
+        <div class="promo-card-actions">
+          <button class="promo-card-btn edit" onclick="event.stopPropagation();editPromoterEvent(${e.id})">✏️ Edit</button>
+          <button class="promo-card-btn delete" onclick="event.stopPropagation();deletePromoterEvent(${e.id})">🗑️ Delete</button>
+        </div>
       </div>`;
     }).join('') + `</div>
     <div style="padding:0 20px 24px"><button class="promo-create-btn" onclick="openEventForm()">+ Drop Another Event</button></div>`;
   }
   document.getElementById('promoterContent').innerHTML = html;
 }
-function openEventForm() {
-  document.getElementById('formDate').min = new Date().toISOString().split('T')[0];
+function openEventForm(prefill) {
+  editingEventId = prefill ? prefill.id : null;
+  document.getElementById('eventFormTitle').textContent = prefill ? '✏️ Edit Event' : '🔥 Drop New Event';
+  document.getElementById('eventFormSubmitBtn').textContent = prefill ? '✅ Save Changes' : '🔥 Drop This Event';
+  if (!prefill) {
+    document.getElementById('formDate').min = new Date().toISOString().split('T')[0];
+  }
+  if (prefill) {
+    document.getElementById('formName').value = prefill.name || '';
+    document.getElementById('formType').value = prefill.type || 'nightlife';
+    document.getElementById('formVenue').value = prefill.venue || '';
+    document.getElementById('formNeighborhood').value = prefill.neighborhood && !prefill.neighborhood.includes(currentCity.state) ? prefill.neighborhood : '';
+    document.getElementById('formZip').value = prefill.zip || '';
+    document.getElementById('formDesc').value = prefill.description || '';
+    document.getElementById('formVisibility').value = prefill.tier || 'free';
+    document.getElementById('formAge').value = prefill.age || '';
+    document.getElementById('formDress').value = prefill.dress || '';
+    document.getElementById('formCapacity').value = prefill.capacity || '';
+    document.getElementById('formGuestList').checked = !!prefill.guestList;
+    document.getElementById('formTables').checked = !!prefill.tables;
+    document.getElementById('formPromoCode').value = prefill.promoCode || '';
+    document.getElementById('formInstagram').value = prefill.instagram ? '@'+prefill.instagram : '';
+    document.getElementById('formContact').value = prefill.contact || '';
+    document.getElementById('formRecurring').value = prefill.recurring || '';
+    if (prefill.flyerUrl) {
+      const img = document.getElementById('flyerPreview');
+      img.src = prefill.flyerUrl; img.style.display = 'block';
+      document.getElementById('flyerZone').classList.add('has-img');
+      document.querySelector('#flyerZone .flyer-zone-icon').textContent = '✅';
+      document.querySelector('#flyerZone .flyer-zone-text').textContent = 'Current flyer (tap to replace)';
+    }
+  }
   document.getElementById('eventFormOverlay').classList.add('open');
   document.getElementById('eventFormSheet').classList.add('open');
 }
 function closeEventForm() {
   document.getElementById('eventFormOverlay').classList.remove('open');
   document.getElementById('eventFormSheet').classList.remove('open');
+  editingEventId = null;
+  document.getElementById('eventFormTitle').textContent = '🔥 Drop New Event';
+  document.getElementById('eventFormSubmitBtn').textContent = '🔥 Drop This Event';
+}
+function editPromoterEvent(id) {
+  const e = EVENTS.find(ev => ev.id === id);
+  if (!e) return;
+  openEventForm(e);
+}
+function deletePromoterEvent(id) {
+  if (!confirm('Delete this event? This cannot be undone.')) return;
+  const idx = EVENTS.findIndex(ev => ev.id === id);
+  if (idx > -1) EVENTS.splice(idx, 1);
+  const saved = JSON.parse(localStorage.getItem('we-litt-promoter-events') || '[]');
+  localStorage.setItem('we-litt-promoter-events', JSON.stringify(saved.filter(e => e.id !== id)));
+  renderPromoterContent();
+  showToast('Event deleted');
+}
+function uploadProfilePhoto(input) {
+  if (!input.files || !input.files[0]) return;
+  const file = input.files[0];
+  if (file.size > 5 * 1024 * 1024) { showToast('Photo must be under 5 MB 📸'); input.value = ''; return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    localStorage.setItem('we-litt-avatar', e.target.result);
+    if (currentUser) { currentUser.avatar = e.target.result; localStorage.setItem('we-litt-user', JSON.stringify(currentUser)); }
+    updateAuthUI();
+    showToast('Profile photo updated ✅');
+  };
+  reader.readAsDataURL(file);
 }
 function fmtTime(t) {
   const [h, m] = t.split(':').map(Number);
@@ -4901,8 +4983,8 @@ function submitPromoterEvent() {
   if (age) vibes.push(`🔞 ${age}`);
   if (dress) vibes.push(`👔 ${dress}`);
   if (recurring) vibes.push(`🔄 ${recurringLabel}`);
-  const newEvent = {
-    id: Date.now(), city: currentCity.id,
+  const newEventData = {
+    id: editingEventId || Date.now(), city: currentCity.id,
     name, type, typeLabel: cat.label, venue,
     neighborhood: neighborhood || `${currentCity.name}, ${currentCity.state}`,
     zip: zip || undefined,
@@ -4921,13 +5003,32 @@ function submitPromoterEvent() {
     trending: false, tonight: dateVal === todayStr, promoterOwned: true,
     revenue: 0, ticketsSold: 0, promoterName: currentUser?.name || 'Promoter',
   };
-  EVENTS.push(newEvent);
-  const savedEvents2 = JSON.parse(localStorage.getItem('we-litt-promoter-events') || '[]');
-  savedEvents2.push(newEvent);
-  localStorage.setItem('we-litt-promoter-events', JSON.stringify(savedEvents2));
-  closeEventForm();
-  renderPromoterContent();
-  showToast('🔥 Your event is live on We Litt!');
+  if (editingEventId) {
+    const idx = EVENTS.findIndex(ev => ev.id === editingEventId);
+    if (idx > -1) {
+      newEventData.revenue = EVENTS[idx].revenue || 0;
+      newEventData.ticketsSold = EVENTS[idx].ticketsSold || 0;
+      newEventData.going = EVENTS[idx].going || 0;
+      newEventData.rating = EVENTS[idx].rating || 0;
+      newEventData.reviews = EVENTS[idx].reviews || 0;
+      EVENTS[idx] = newEventData;
+    }
+    const savedEvents2 = JSON.parse(localStorage.getItem('we-litt-promoter-events') || '[]');
+    const si = savedEvents2.findIndex(e => e.id === editingEventId);
+    if (si > -1) savedEvents2[si] = newEventData; else savedEvents2.push(newEventData);
+    localStorage.setItem('we-litt-promoter-events', JSON.stringify(savedEvents2));
+    closeEventForm();
+    renderPromoterContent();
+    showToast('✅ Event updated!');
+  } else {
+    EVENTS.push(newEventData);
+    const savedEvents2 = JSON.parse(localStorage.getItem('we-litt-promoter-events') || '[]');
+    savedEvents2.push(newEventData);
+    localStorage.setItem('we-litt-promoter-events', JSON.stringify(savedEvents2));
+    closeEventForm();
+    renderPromoterContent();
+    showToast('🔥 Your event is live on We Litt!');
+  }
   document.getElementById('ticketTierBuilder').innerHTML = '';
   ticketTierCount = 0;
   ['formName','formVenue','formNeighborhood','formZip','formDate','formTime','formEndTime',
@@ -5019,13 +5120,29 @@ function logout() {
   updateAuthUI();
 }
 function updateAuthUI() {
+  const savedAvatar = localStorage.getItem('we-litt-avatar');
   const btn = document.getElementById('headerAuthBtn');
   if (btn) {
-    btn.textContent = isLoggedIn ? (currentUser?.emoji || '😎') : '👤';
+    if (savedAvatar && isLoggedIn) {
+      btn.innerHTML = `<img src="${savedAvatar}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;display:block">`;
+    } else {
+      btn.textContent = isLoggedIn ? (currentUser?.emoji || '😎') : '👤';
+    }
     btn.onclick = isLoggedIn ? () => { if (confirm('Sign out of We Litt?')) logout(); } : openAuth;
   }
-  const pa = document.querySelector('.profile-avatar');
-  if (pa) pa.textContent = isLoggedIn ? (currentUser?.emoji || '😎') : '👤';
+  const pa = document.getElementById('profileAvatarEl');
+  if (pa) {
+    const emojiEl = pa.querySelector('.profile-avatar-emoji');
+    let photoEl = pa.querySelector('img.profile-photo');
+    if (savedAvatar && isLoggedIn) {
+      if (!photoEl) { photoEl = document.createElement('img'); photoEl.className = 'profile-photo'; pa.insertBefore(photoEl, pa.firstChild); }
+      photoEl.src = savedAvatar;
+      if (emojiEl) emojiEl.style.display = 'none';
+    } else {
+      if (photoEl) photoEl.remove();
+      if (emojiEl) { emojiEl.style.display = ''; emojiEl.textContent = isLoggedIn ? (currentUser?.emoji || '😎') : '👤'; }
+    }
+  }
   const pn = document.querySelector('.profile-name');
   if (pn) pn.textContent = isLoggedIn ? (currentUser?.name || 'Night Owl') : 'Guest';
   const ph = document.querySelector('.profile-handle');
